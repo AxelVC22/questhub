@@ -1,0 +1,32 @@
+services:
+  rest-service:
+    build:
+      context: ./REST
+    ports:
+      - "3033:3033"
+    networks:
+      - questhub-network
+
+  grpc-service:
+    build:
+      context: ./gRPC
+    ports:
+      - "50051:50051"
+    networks:
+      - questhub-network
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "80:80"
+    depends_on:
+      - rest-service
+      - grpc-service
+    networks:
+      - questhub-network
+
+networks:
+  questhub-network:
+    driver: bridge

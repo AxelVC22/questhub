@@ -1,0 +1,72 @@
+plugins {
+    id 'java'
+    id 'com.google.protobuf' version '0.9.4'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '8.1.1' // <= AGREGADO
+}
+
+group = 'com.example'
+version = '1.0'
+
+sourceCompatibility = '17'
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    grpcVersion = '1.63.0'
+    protobufVersion = '3.25.3'
+}
+
+dependencies {
+    implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
+    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
+    implementation "io.grpc:grpc-stub:${grpcVersion}"
+
+    implementation 'org.mongodb:mongodb-driver-sync:4.11.0'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.0'
+    compileOnly "org.apache.tomcat:annotations-api:6.0.53"
+
+    testImplementation 'junit:junit:4.13.2'
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:${protobufVersion}"
+    }
+    plugins {
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.plugins {
+                grpc {}
+            }
+        }
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'build/generated/source/proto/main/java',
+                    'build/generated/source/proto/main/grpc'
+        }
+    }
+}
+
+application {
+    mainClass = 'post.server.PostServer'
+}
+
+// Usa shadowJar en vez de una fatJar manual
+shadowJar {
+    archiveBaseName.set('questhub-app')
+    archiveClassifier.set('')
+    archiveVersion.set('1.0')
+}
+
+build.dependsOn shadowJar

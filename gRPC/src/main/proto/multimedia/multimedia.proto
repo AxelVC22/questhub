@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package multimedia;
+
+option java_package = "com.proto.multimedia";
+option java_multiple_files = true;
+
+message UploadRequest {
+  string post_id = 1;
+  string filename = 2;
+  bytes data = 3;
+  string content_type = 4;
+}
+
+message UploadResponse {
+  string url = 1;
+}
+
+service MultimediaService {
+  rpc Upload(stream UploadRequest) returns (UploadResponse);
+}
