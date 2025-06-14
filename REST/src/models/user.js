@@ -14,11 +14,14 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
+        minlength: 8,
+        maxlength: 100,
         required: true
     },
     profilePicture: {
         type: String,
         default: 'https://i.imgur.com/WxNkK7J.png'
+        
         // type: mongoose.Schema.Types.ObjectId,
         // ref: 'fs.files',
     },
