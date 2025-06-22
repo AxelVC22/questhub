@@ -53,6 +53,7 @@ const login = async (req = request, res = response) => {
         }
 
         const validPassword = await bcrypt.compare(password, user.password);
+        
         if (!validPassword) {
             return res.status(400).json({
                 message: "La contraseña no es correcta"

@@ -138,7 +138,7 @@ const getPosts = async (req = request, res = response) => {
       .skip((page - 1) * limit)
       .limit(limit)
       .sort({ createdAt: -1 })
-      .populate('author');
+      .populate('author', 'name').populate('categories', 'name');
 
     res.status(200).json({
       currentPage: page,
