@@ -158,7 +158,7 @@ router.get('/:_id', getUserById);
  *       500:
  *         description: Error interno al actualizar el usuario
  */
-router.put('/:_id', updateUser);
+router.put('/:_id', verifyToken, updateUser);
 
 /**
  * @swagger

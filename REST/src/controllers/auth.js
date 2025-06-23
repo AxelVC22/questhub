@@ -19,16 +19,16 @@ const register = async (req = request, res = response) => {
         await newUser.save();
 
         res.json({
-            message: `Bienvenido ${user.name}`,
+            message: `Bienvenido ${newUser.name}`,
             user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                profilePicture: user.profilePicture,
-                role: user.role,
-                status: user.status,
-                followers: user.followers,
-                banEndDate: user.banEndDate
+                id: newUser._id,
+                name: newUser.name,
+                email: newUser.email,
+                profilePicture: newUser.profilePicture,
+                role: newUser.role,
+                status: newUser.status,
+                followers: newUser.followers,
+                banEndDate: newUser.banEndDate
             }
         });
 
