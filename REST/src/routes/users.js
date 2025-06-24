@@ -14,7 +14,8 @@ const {
 
     followUser,
     unfollowUser,
-    getFollowersByUserId
+    getFollowersByUserId,
+    getProfilePicture
  } = require('../controllers/users');
 
 /**
@@ -426,5 +427,35 @@ router.put('/:_id/follow', followUser);
  *         description: Error interno al obtener los seguidores.
  */
 router.get('/:_id/followers', getFollowersByUserId)
+
+/**
+ * @swagger
+ * /api/users/{_id}/profile-picture:
+ *   get:
+ *     summary: Obtener la imagen de perfil del usuario
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: _id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID del usuario
+ *     responses:
+ *       200:
+ *         description: Imagen devuelta correctamente
+ *         content:
+ *           image/png:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       404:
+ *         description: Imagen no encontrada
+ *       500:
+ *         description: Error interno
+ */
+router.get('/:_id/profile-picture', verifyToken, getProfilePicture);
+
+
 
 module.exports = router;
