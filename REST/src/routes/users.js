@@ -6,15 +6,16 @@ const upload = createUploadMiddleware('profile_pictures');
 
 const { 
     getUserById,
+    getUsers,
     updateUser,
     disableUser,
     updateUserProfilePicture,
     updateUserPassword,
-
-
     followUser,
     unfollowUser,
-    getFollowersByUserId
+    getFollowersByUserId,
+    getProfilePicture,
+    register
  } = require('../controllers/users');
 
 /**
@@ -100,7 +101,7 @@ router.get('/:_id', getUserById);
  *       500:
  *         description: Error interno al obtener los usuarios
  */
-//router.get('/', verifyToken, getUsers);
+router.get('/', verifyToken, getUsers);
 
 /**
  * @swagger
@@ -158,7 +159,7 @@ router.get('/:_id', getUserById);
  *       500:
  *         description: Error interno al actualizar el usuario
  */
-router.put('/:_id', updateUser);
+router.put('/:_id', verifyToken, updateUser);
 
 /**
  * @swagger
@@ -426,5 +427,80 @@ router.put('/:_id/follow', followUser);
  *         description: Error interno al obtener los seguidores.
  */
 router.get('/:_id/followers', getFollowersByUserId)
+
+/**
+ * @swagger
+ * /api/users/{_id}/profile-picture:
+ *   get:
+ *     summary: Obtener la imagen de perfil del usuario
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: _id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID del usuario
+ *     responses:
+ *       200:
+ *         description: Imagen devuelta correctamente
+ *         content:
+ *           image/png:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       404:
+ *         description: Imagen no encontrada
+ *       500:
+ *         description: Error interno
+ */
+router.get('/:_id/profile-picture', verifyToken, getProfilePicture);
+
+/**
+ * @swagger
+ * /api/users:
+ *   post:
+ *     summary: Registrar un nuevo usuario
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Nombre completo del usuario
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Correo electrónico único del usuario
+ *               password:
+ *                 type: string
+ *                 description: Contraseña para el usuario
+ *     responses:
+ *       200:
+ *         description: Usuario creado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: El correo ya está registrado
+ *       500:
+ *         description: Error al crear el usuario
+ */
+router.post('/', verifyToken, register);
+
 
 module.exports = router;

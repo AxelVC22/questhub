@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const app = express();
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./src/config/swagger');
+const path = require('path');
 require('dotenv').config();
 
 app.use(express.json());
@@ -12,6 +13,7 @@ mongoose.connect(mongoDataBaseURI)
 .then(() => console.log('Connecting to DataBase'))
 .catch(error => console.error('Couldn`t connect database', error));
 
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/users', require('./src/routes/users'));
 app.use('/api/auth', require('./src/routes/auth'));
 app.use('/api/categories', require('./src/routes/categories'));
