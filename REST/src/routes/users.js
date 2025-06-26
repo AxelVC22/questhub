@@ -6,16 +6,16 @@ const upload = createUploadMiddleware('profile_pictures');
 
 const { 
     getUserById,
+    getUsers,
     updateUser,
     disableUser,
     updateUserProfilePicture,
     updateUserPassword,
-
-
     followUser,
     unfollowUser,
     getFollowersByUserId,
-    getProfilePicture
+    getProfilePicture,
+    register
  } = require('../controllers/users');
 
 /**
@@ -101,7 +101,7 @@ router.get('/:_id', getUserById);
  *       500:
  *         description: Error interno al obtener los usuarios
  */
-//router.get('/', verifyToken, getUsers);
+router.get('/', verifyToken, getUsers);
 
 /**
  * @swagger
@@ -456,6 +456,51 @@ router.get('/:_id/followers', getFollowersByUserId)
  */
 router.get('/:_id/profile-picture', verifyToken, getProfilePicture);
 
+/**
+ * @swagger
+ * /api/users:
+ *   post:
+ *     summary: Registrar un nuevo usuario
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Nombre completo del usuario
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Correo electrónico único del usuario
+ *               password:
+ *                 type: string
+ *                 description: Contraseña para el usuario
+ *     responses:
+ *       200:
+ *         description: Usuario creado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: El correo ya está registrado
+ *       500:
+ *         description: Error al crear el usuario
+ */
+router.post('/', verifyToken, register);
 
 
 module.exports = router;

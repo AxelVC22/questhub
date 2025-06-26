@@ -9,6 +9,7 @@ const {
     updateCategory,
     deleteCategory,
 } = require('../controllers/categories');
+const verifyToken = require('../middlewares/jwt-auth');
 
 /**
  * @swagger
@@ -88,7 +89,7 @@ router.get('/', getCategories);
  *       400:
  *         description: Datos inválidos
  */
-router.post('/', createCategory);
+router.post('/', verifyToken, createCategory);
 
 /**
  * @swagger
@@ -131,7 +132,7 @@ router.post('/', createCategory);
  *       404:
  *         description: Categoría no encontrada
  */
-router.put('/:category_id', updateCategory);
+router.put('/:category_id', verifyToken, updateCategory);
 
 /**
  * @swagger
@@ -156,6 +157,6 @@ router.put('/:category_id', updateCategory);
  *       404:
  *         description: Categoría no encontrada
  */
-router.delete('/:category_id', deleteCategory);
+router.delete('/:category_id', verifyToken, deleteCategory);
 
 module.exports = router;

@@ -45,7 +45,7 @@ const createCategory = async (req = request, res = response) => {
          if (!description) {
               return res.status(400).json({ message: 'La descripción de la categoría es obligatoria' });
          }
-        const newCategory = await Category.create({ name, description });
+        const newCategory = await Category.create({ name, description, status });
 
         return res.status(201).json(newCategory);
     } catch (error) {
