@@ -19,7 +19,7 @@ const register = async (req = request, res = response) => {
         await newUser.save();
 
         res.json({
-            message: `Bienvenido ${newUser.name}`,
+            message: "Usuario creado correctamente",
             user: {
                 id: newUser._id,
                 name: newUser.name,
