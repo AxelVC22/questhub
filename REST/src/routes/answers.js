@@ -94,7 +94,7 @@ router.get('/post/:post_id', getAnswersByPostId);
  *       500:
  *         description: Error al recuperar las respuestas
  */
-router.get('/answer/:answer_id', getAnswerById);
+router.get('/answer/:answer_id', getAnswersByAnswerId);
 
 /**
  * @swagger
