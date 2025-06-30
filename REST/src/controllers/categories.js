@@ -25,23 +25,8 @@ const getCategoryById = async (req = request, res = response) => {
 
 const getCategories = async (req = request, res = response) => {
   try {
-    let { page = 1, limit = 10 } = req.query;
-
-    page = Math.max(Number(page), 1);
-    limit = Math.max(Number(limit), 1);
-
-    const totalCategories = await Category.countDocuments();
-    const totalPages = Math.ceil(totalCategories / limit);
-
-    const categories = await Category.find({ status: "Active" })
-      ;
-
-    res.status(200).json({
-      currentPage: page,
-      totalPages,
-      totalCategories,
-      categories
-    });
+    const categories = await Category.find();
+    return res.status(200).json(categories);
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({

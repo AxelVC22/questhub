@@ -27,15 +27,15 @@ const getUserById = async (req = request, res = response) => {
 }
 
 const getUsers = async (req = request, res = response) => {
-   try {
-       const users = await User.find().select('-password -__v');
-       res.json(users);
-   } catch (error) {
-       res.status(500).json({
-           message: 'Error al recuperar los usuarios',
-           error
-       });
-   }
+    try {
+        const users = await User.find().select('-password -__v');
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({
+            message: 'Error al recuperar los usuarios',
+            error
+        });
+    }
 }
 
 const updateUser = async (req = request, res = response) => {
@@ -44,9 +44,9 @@ const updateUser = async (req = request, res = response) => {
         const { name, email, role } = req.body;
         if (email) {
             const existingUser = await User.findOne({ email, _id: { $ne: _id } });
-                if (existingUser) {
+            if (existingUser) {
                 return res.status(400).json({
-                  message: 'El correo electrónico ya está registrado, intente con otro',
+                    message: 'El correo electrónico ya está registrado, intente con otro',
                 });
             }
         }
@@ -59,7 +59,7 @@ const updateUser = async (req = request, res = response) => {
 
         if (!updatedUser) {
             return res.status(404).json({
-            message: 'Usuario no encontrado',
+                message: 'Usuario no encontrado',
             });
         }
 
@@ -67,8 +67,8 @@ const updateUser = async (req = request, res = response) => {
     } catch (error) {
         console.error(error);
         return res.status(500).json({
-          message: 'Error al actualizar al usuario',
-          error: error.message,
+            message: 'Error al actualizar al usuario',
+            error: error.message,
         });
     }
 };
@@ -103,7 +103,7 @@ const updateUserProfilePicture = async (req = request, res = response) => {
                 message: "Usuario no encontrado"
             });
         }
-        
+
         if (!req.file) {
             return res.status(404).json({
                 message: "No se ha enviado una imagen"
@@ -113,10 +113,10 @@ const updateUserProfilePicture = async (req = request, res = response) => {
         // Construir la URL completa
         const baseUrl = `${req.protocol}://${req.get('host')}`;
         const imageUrl = `${baseUrl}/${req.file.path.replace(/\\/g, '/')}`;
-        
+
         user.profilePicture = imageUrl;
         await user.save();
-        
+
         res.json({
             message: 'Foto de perfil actualizada',
             profilePicture: user.profilePicture
@@ -139,16 +139,16 @@ const updateUserPassword = async (req = request, res = response) => {
             return res.status(400).json({
                 message: "Usuario no encontrado"
             });
-        }        
+        }
 
         if (password) {
             const salt = bcrypt.genSaltSync();
             const hashedPassword = bcrypt.hashSync(password, salt);
             user.password = hashedPassword;
         }
-        
+
         await user.save();
-        
+
         res.json({
             message: 'Contraseña actualizada',
             user: {
@@ -200,7 +200,7 @@ const followUser = async (req, res) => {
 
         await newFollow.save();
 
-       await User.updateOne({ _id }, { $inc: { followers: 1 } });
+        await User.updateOne({ _id }, { $inc: { followers: 1 } });
 
         return res.status(200).json({ message: "Usuario seguido correctamente" });
 
@@ -235,17 +235,17 @@ const unfollowUser = async (req, res) => {
             return res.status(400).json({ message: "No sigues a este usuario" });
         }
 
-       // 1. Elimina la relación de seguimiento
-       await UserFollower.findOneAndDelete({
-           user: _id,        // el usuario al que se seguía
-           follower: userId  // el que lo seguía
-       });
+        // 1. Elimina la relación de seguimiento
+        await UserFollower.findOneAndDelete({
+            user: _id,        // el usuario al que se seguía
+            follower: userId  // el que lo seguía
+        });
 
-       // 2. Resta 1 a la cantidad de seguidores
-       await User.updateOne({ _id }, { $inc: { followers: -1 } });
+        // 2. Resta 1 a la cantidad de seguidores
+        await User.updateOne({ _id }, { $inc: { followers: -1 } });
 
-       // 3. Responde
-       return res.status(200).json({ message: "Usuario dejado de seguir correctamente" });
+        // 3. Responde
+        return res.status(200).json({ message: "Usuario dejado de seguir correctamente" });
 
 
     } catch (error) {
@@ -262,13 +262,11 @@ const getFollowersByUserId = async (req, res) => {
             .populate('follower', 'name')
             .select('follower');
 
-        const followerNames = followers.map(f => f.follower.name);
 
         return res.status(200).json({
-            followers: followerNames
+            followers
         });
     } catch (error) {
-        console.error('Error al obtener seguidores:', error);
         return res.status(500).json({
             message: 'Error al obtener seguidores',
             error: error.message
@@ -278,7 +276,7 @@ const getFollowersByUserId = async (req, res) => {
 
 const getProfilePicture = async (req, res) => {
     const { _id } = req.params;
-    
+
     if (!mongoose.Types.ObjectId.isValid(_id)) {
         return res.status(400).json({ message: "ID no válido" });
     }

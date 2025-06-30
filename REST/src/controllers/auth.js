@@ -70,7 +70,7 @@ const login = async (req = request, res = response) => {
         res.json({
             message: `Bienvenido ${user.name}`,
             user: {
-                id: user._id,
+                _id: user._id,
                 name: user.name,
                 email: user.email,
                 profilePicture: user.profilePicture,
