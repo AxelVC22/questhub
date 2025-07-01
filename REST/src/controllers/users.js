@@ -235,16 +235,13 @@ const unfollowUser = async (req, res) => {
             return res.status(400).json({ message: "No sigues a este usuario" });
         }
 
-        // 1. Elimina la relación de seguimiento
         await UserFollower.findOneAndDelete({
-            user: _id,        // el usuario al que se seguía
-            follower: userId  // el que lo seguía
+            user: _id,       
+            follower: userId  
         });
 
-        // 2. Resta 1 a la cantidad de seguidores
         await User.updateOne({ _id }, { $inc: { followers: -1 } });
 
-        // 3. Responde
         return res.status(200).json({ message: "Usuario dejado de seguir correctamente" });
 
 

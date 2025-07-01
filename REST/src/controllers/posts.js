@@ -1,5 +1,6 @@
-const {request, response} = require('express');
+const { request, response } = require('express');
 const Post = require('../models/post');
+const UserFollower = require('../models/userFollower');
 
 const getPostById = async (req = request, res = response) => {
     try {
@@ -18,7 +19,7 @@ const getPostById = async (req = request, res = response) => {
         console.error(error.message);
         res.status(500).json({
             message: 'Error al recuperar la publicacion',
-            error : error.message
+            error: error.message
         });
     }
 }
@@ -64,7 +65,7 @@ const getPostsByUserId = async (req = request, res = response) => {
         console.log(error.message);
         res.status(500).json({
             message: 'Error al recuperar las publicaciones',
-            error : error.message
+            error: error.message
         });
     }
 }
@@ -95,7 +96,7 @@ const updatePost = async (req = request, res = response) => {
         console.log(error.message);
         res.status(500).json({
             message: 'Error al actualizar la publicacion',
-            error : error.message
+            error: error.message
         });
     }
 }
@@ -119,40 +120,63 @@ const deletePost = async (req = request, res = response) => {
         console.log(error.message);
         res.status(500).json({
             message: 'Error al eliminar la publicacion',
-            error : error.message
+            error: error.message
         });
     }
 }
 
 const getPosts = async (req = request, res = response) => {
-  try {
-    let { page = 1, limit = 10 } = req.query;
+    try {
+        let { page = 1, limit = 10, user } = req.query;
 
-    page = Math.max(Number(page), 1);
-    limit = Math.max(Number(limit), 1);
+        page = Math.max(Number(page), 1);
+        limit = Math.max(Number(limit), 1);
 
-    const totalPosts = await Post.countDocuments();
-    const totalPages = Math.ceil(totalPosts / limit);
+        const totalPosts = await Post.countDocuments();
+        const totalPages = Math.ceil(totalPosts / limit);
 
-    const posts = await Post.find()
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .sort({ createdAt: -1 })
-      .populate('author', 'name').populate('categories', 'name');
+        const posts = await Post.find()
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .sort({ createdAt: -1 })
+            .populate('author', 'name')
+            .populate('categories', 'name');
 
-    res.status(200).json({
-      currentPage: page,
-      totalPages,
-      totalPosts,
-      posts
-    });
-  } catch (error) {
-    console.log(error.message);
-    res.status(500).json({
-      message: 'Error al recuperar las publicaciones',
-      error: error.message
-    });
-  }
+        const authorIds = posts.map(post => post.author._id.toString());
+        const uniqueAuthorIds = [...new Set(authorIds)];
+
+        let followedIds = new Set();
+
+        if (user) {
+            const follows = await UserFollower.find({
+                follower: user,
+                user: { $in: uniqueAuthorIds }
+            });
+
+            followedIds = new Set(follows.map(f => f.user.toString()));
+        }
+
+        const postsWithFollowInfo = posts.map(post => {
+            const p = post.toObject();
+            // Solo marca isFollowed si hay user
+            p.author.isFollowed = user ? followedIds.has(post.author._id.toString()) : false;
+            return p;
+        });
+
+        res.status(200).json({
+            currentPage: page,
+            totalPages,
+            totalPosts,
+            posts: postsWithFollowInfo
+        });
+
+    } catch (error) {
+        console.log(error.message);
+        res.status(500).json({
+            message: 'Error al recuperar las publicaciones',
+            error: error.message
+        });
+    }
 };
 
 
