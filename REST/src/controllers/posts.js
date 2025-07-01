@@ -83,7 +83,7 @@ const updatePost = async (req = request, res = response) => {
             return res.status(400).json({ message: 'El contenido de la publicación es obligatorio' });
         }
 
-        const updatedPost = await Post.findByIdAndUpdate(post_id, { title, content, multimedia }, { new: true });
+        const updatedPost = await Post.findByIdAndUpdate(post_id, { title, content, multimedia, categories }, { new: true });
 
         if (!updatedPost) {
             return res.status(404).json({
@@ -135,19 +135,33 @@ const getPosts = async (req = request, res = response) => {
         const totalPosts = await Post.countDocuments();
         const totalPages = Math.ceil(totalPosts / limit);
 
-        const posts = await Post.find()
+        const posts = await Post.find({status:'Active'})
             .skip((page - 1) * limit)
             .limit(limit)
             .sort({ createdAt: -1 })
             .populate('author', 'name')
             .populate('categories', 'name');
 
-        const authorIds = posts.map(post => post.author._id.toString());
+        // Si no hay posts, responde directamente sin procesar más
+        if (!posts.length) {
+            return res.status(200).json({
+                currentPage: page,
+                totalPages,
+                totalPosts,
+                posts: []
+            });
+        }
+
+        // Autores válidos (que sí fueron populados)
+        const authorIds = posts
+            .filter(post => post.author)
+            .map(post => post.author._id.toString());
+
         const uniqueAuthorIds = [...new Set(authorIds)];
 
         let followedIds = new Set();
 
-        if (user) {
+        if (user && uniqueAuthorIds.length > 0) {
             const follows = await UserFollower.find({
                 follower: user,
                 user: { $in: uniqueAuthorIds }
@@ -158,8 +172,13 @@ const getPosts = async (req = request, res = response) => {
 
         const postsWithFollowInfo = posts.map(post => {
             const p = post.toObject();
-            // Solo marca isFollowed si hay user
-            p.author.isFollowed = user ? followedIds.has(post.author._id.toString()) : false;
+
+            if (p.author) {
+                p.author.isFollowed = user
+                    ? followedIds.has(post.author._id.toString())
+                    : false;
+            }
+
             return p;
         });
 
@@ -169,6 +188,7 @@ const getPosts = async (req = request, res = response) => {
             totalPosts,
             posts: postsWithFollowInfo
         });
+
 
     } catch (error) {
         console.log(error.message);

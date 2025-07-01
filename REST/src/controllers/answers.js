@@ -1,6 +1,7 @@
 const { request, response } = require('express');
 const Answer = require('../models/answer');
 const Post = require('../models/post');
+const UserFollower = require('../models/userFollower')
 
 const getAnswerById = async (req = request, res = response) => {
     try {
@@ -104,7 +105,7 @@ const deleteAnswer = async (req = request, res = response) => {
 
 const getAnswersByPostId = async (req = request, res = response) => {
     try {
-        let { page = 1, limit = 10 } = req.query;
+        let { page = 1, limit = 10, user } = req.query;
 
         const { post_id } = req.params;
 
@@ -114,16 +115,57 @@ const getAnswersByPostId = async (req = request, res = response) => {
         const totalAnswers = await Answer.countDocuments({ post: post_id });
         const totalPages = Math.ceil(totalAnswers / limit);
 
-        const answers = await Answer.find({ post: post_id }).skip((page - 1) * limit)
+        const answers = await Answer.find({ post: post_id, status: 'Active' }).skip((page - 1) * limit)
             .limit(limit)
-            .sort({ qualification: -1, createdAt: -1  }).populate('post', '_id').populate('author', 'name');
+            .sort({ qualification: -1, createdAt: -1 }).populate('post', '_id').populate('author', 'name');
 
+
+
+        if (!answers.length) {
+            return res.status(200).json({
+                currentPage: page,
+                totalPages,
+                totalAnswers,
+                answers: []
+            });
+        }
+
+        const authorIds = answers
+            .filter(answer => answer.author)
+            .map(answer => answer.author._id.toString());
+
+
+        const uniqueAuthorIds = [...new Set(authorIds)];
+
+        let followedIds = new Set();
+
+
+        if (user && uniqueAuthorIds.length > 0) {
+            const follows = await UserFollower.find({
+                follower: user,
+                user: { $in: uniqueAuthorIds }
+            });
+
+            followedIds = new Set(follows.map(f => f.user.toString()));
+        }
+
+        const answersWithFollowInfo = answers.map(answer => {
+            const a = answer.toObject();
+
+            if (a.author) {
+                a.author.isFollowed = user
+                    ? followedIds.has(answer.author._id.toString())
+                    : false;
+            }
+
+            return a;
+        });
 
         return res.status(200).json({
             currentPage: page,
             totalPages,
             totalAnswers,
-            answers
+            answers: answersWithFollowInfo
         });
     }
     catch (error) {
@@ -144,12 +186,12 @@ const getAnswersByAnswerId = async (req = request, res = response) => {
         page = Math.max(Number(page), 1);
         limit = Math.max(Number(limit), 1);
 
-        const totalAnswers = await Answer.countDocuments({parentAnswer:answer_id});
+        const totalAnswers = await Answer.countDocuments({ parentAnswer: answer_id });
         const totalPages = Math.ceil(totalAnswers / limit);
 
         const answers = await Answer.find({ parentAnswer: answer_id }).skip((page - 1) * limit)
             .limit(limit)
-            .sort({qualification: -1, createdAt: -1  }).populate('author', 'name');
+            .sort({ qualification: -1, createdAt: -1 }).populate('author', 'name');
 
 
         return res.status(200).json({
