@@ -383,7 +383,7 @@ router.put('/:_id/unfollow', unfollowUser);
  *         description: Error interno al seguir al usuario.
  */
 
-router.put('/:_id/follow', followUser);
+router.post('/:_id/follow', followUser);
 
 /**
  * @swagger

@@ -1,5 +1,6 @@
-const {request, response} = require('express');
+const { request, response } = require('express');
 const Rating = require('../models/rating');
+const Answer = require('../models/answer');
 
 const getRatingById = async (req = request, res = response) => {
     try {
@@ -17,7 +18,7 @@ const getRatingById = async (req = request, res = response) => {
         console.error(error.message, error);
         res.status(500).json({
             message: 'Error al recuperar la calificación',
-            error : error.message
+            error: error.message
         });
     }
 }
@@ -39,13 +40,25 @@ const createRating = async (req = request, res = response) => {
             return res.status(400).json({ message: 'La calificación debe estar asociada a una respuesta' });
         }
 
-        const newRating = await Rating.create({
-            qualification,
-            author,
-            answer
+        const newRating = await Rating.findOneAndUpdate(
+            { author, answer },
+            { qualification },
+            { upsert: true, new: true }
+        );
+
+        const ratings = await Rating.find({ answer });
+
+        const totalRatings = ratings.length;
+        const average = totalRatings > 0
+            ? ratings.reduce((sum, r) => sum + r.qualification, 0) / totalRatings
+            : 0;
+
+        const newAnswer = await Answer.findByIdAndUpdate(answer, {
+            qualification: average,
+            totalRatings: totalRatings
         });
 
-        return res.status(201).json(newRating);
+        return res.status(201).json(newAnswer);
     } catch (error) {
         console.error(error.message);
         return res.status(500).json({
@@ -66,7 +79,7 @@ const getRatingsByAnswerId = async (req = request, res = response) => {
         console.error(error.message);
         res.status(500).json({
             message: 'Error al recuperar las calificaciones',
-            error : error.message
+            error: error.message
         });
     }
 }
