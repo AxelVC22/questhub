@@ -39,14 +39,14 @@ const getReportById = async (req = request, res = response) => {
 
 const getReports = async (req = request, res = response) => {
     try {
-        let { page = 1, limit = 10 } = req.query;
+        let { page = 1, limit = 10, status } = req.query;
 
         page = Math.max(Number(page), 1);
         limit = Math.max(Number(limit), 1);
         const totalReports = await Report.countDocuments();
         const totalPages = Math.ceil(totalReports / limit);
 
-        const reports = await Report.find()
+        const reports = await Report.find({ status: status })
             .skip((page - 1) * limit)
             .limit(limit)
             .sort({ createdAt: -1 })
@@ -54,10 +54,16 @@ const getReports = async (req = request, res = response) => {
             .populate('reporter', 'name')
             .populate({
                 path: 'post',
-                populate: {
-                    path: 'author',
-                    select: 'name'
-                }
+                populate: [
+                    {
+                        path: 'author',
+                        select: 'name'
+                    },
+                    {
+                        path: 'categories',
+                        select: 'name'
+                    }
+                ]
             })
             .populate({
                 path: 'answer',
