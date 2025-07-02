@@ -210,7 +210,7 @@ router.put('/:answer_id', updateAnswer);
  *       500:
  *         description: Error al eliminar la respuesta
  */
-router.patch('/:answer_id', deleteAnswer);
+router.delete('/:answer_id', deleteAnswer);
 
 
 module.exports = router;
