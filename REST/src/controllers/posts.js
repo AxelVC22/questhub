@@ -6,7 +6,7 @@ const getPostById = async (req = request, res = response) => {
     try {
         const { post_id } = req.params;
         console.log('ID recibido:', post_id);
-        const aux_post = await Post.findById(post_id).populate('author', 'name').populate('categories', 'name');
+        const aux_post = await Post.findById(post_id).populate('author', 'name').populate('category', 'name');
 
         if (!aux_post) {
             return res.status(404).json({
@@ -26,7 +26,8 @@ const getPostById = async (req = request, res = response) => {
 
 const createPost = async (req = request, res = response) => {
     try {
-        const { title, content, author, categories } = req.body;
+        const { title, content, author, category } = req.body;
+        
         if (!title) {
             return res.status(400).json({ message: 'El título de la publicación es obligatorio' });
         }
@@ -39,11 +40,11 @@ const createPost = async (req = request, res = response) => {
             return res.status(400).json({ message: 'El autor de la publicación es obligatorio' });
         }
 
-        if (!categories || categories.length === 0) {
-            return res.status(400).json({ message: 'Las categorías de la publicación son obligatorias' });
+        if (!category) {
+            return res.status(400).json({ message: 'La categoría de la publicación es obligatoria' });
         }
 
-        const newPost = await Post.create({ title, content, author, categories });
+        const newPost = await Post.create({ title, content, author, category });
 
         return res.status(201).json(newPost);
     } catch (error) {
@@ -58,7 +59,7 @@ const createPost = async (req = request, res = response) => {
 const getPostsByUserId = async (req = request, res = response) => {
     try {
         const { user_id } = req.params;
-        const posts = await Post.find({ author: user_id }).populate('author', 'name').populate('categories', 'name');
+        const posts = await Post.find({ author: user_id }).populate('author', 'name').populate('category', 'name');
 
         return res.status(200).json(posts);
     } catch (error) {
@@ -73,7 +74,7 @@ const getPostsByUserId = async (req = request, res = response) => {
 const updatePost = async (req = request, res = response) => {
     try {
         const { post_id } = req.params;
-        const { title, content, categories, multimedia } = req.body;
+        const { title, content, category } = req.body;
 
         if (!title) {
             return res.status(400).json({ message: 'El título de la publicación es obligatorio' });
@@ -83,7 +84,7 @@ const updatePost = async (req = request, res = response) => {
             return res.status(400).json({ message: 'El contenido de la publicación es obligatorio' });
         }
 
-        const updatedPost = await Post.findByIdAndUpdate(post_id, { title, content, multimedia, categories }, { new: true });
+        const updatedPost = await Post.findByIdAndUpdate(post_id, { title, content, category }, { new: true });
 
         if (!updatedPost) {
             return res.status(404).json({
@@ -140,7 +141,7 @@ const getPosts = async (req = request, res = response) => {
             .limit(limit)
             .sort({ createdAt: -1 })
             .populate('author', 'name')
-            .populate('categories', 'name');
+            .populate('category', 'name');
 
         if (!posts.length) {
             return res.status(200).json({
@@ -187,7 +188,6 @@ const getPosts = async (req = request, res = response) => {
             posts: postsWithFollowInfo
         });
 
-
     } catch (error) {
         console.log(error.message);
         res.status(500).json({
@@ -196,7 +196,6 @@ const getPosts = async (req = request, res = response) => {
         });
     }
 };
-
 
 module.exports = {
     getPostById,
