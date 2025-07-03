@@ -142,7 +142,6 @@ const getPosts = async (req = request, res = response) => {
             .populate('author', 'name')
             .populate('categories', 'name');
 
-        // Si no hay posts, responde directamente sin procesar más
         if (!posts.length) {
             return res.status(200).json({
                 currentPage: page,
@@ -152,7 +151,6 @@ const getPosts = async (req = request, res = response) => {
             });
         }
 
-        // Autores válidos (que sí fueron populados)
         const authorIds = posts
             .filter(post => post.author)
             .map(post => post.author._id.toString());
