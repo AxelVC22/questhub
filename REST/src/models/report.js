@@ -8,7 +8,7 @@ const reportSchema = new mongoose.Schema({
     status : {
            type: String,
            required : true,
-           enum: ['Pending', 'Checked', 'Resolved'],
+           enum: ['Pending', 'Checked', 'Sanctioned'],
            default: 'Pending'
     },
     post : {
