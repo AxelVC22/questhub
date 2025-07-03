@@ -16,6 +16,24 @@ message UploadResponse {
   string url = 1;
 }
 
+message GetMultimediaRequest {
+  string post_id = 1;
+}
+
+message MultimediaItem {
+  string filename = 1;
+  string original_filename = 2;
+  string content_type = 3;
+  string file_url = 4;
+  string uploaded_at = 5;
+  bytes data = 6;
+}
+
+message GetMultimediaResponse {
+  repeated MultimediaItem multimedia_items = 1;
+}
+
 service MultimediaService {
   rpc Upload(stream UploadRequest) returns (UploadResponse);
+  rpc GetMultimedia(GetMultimediaRequest) returns (GetMultimediaResponse);
 }
