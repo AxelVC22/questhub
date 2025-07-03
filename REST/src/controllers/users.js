@@ -94,41 +94,37 @@ const disableUser = async (req = request, res = response) => {
     }
 }
 
-const updateUserProfilePicture = async (req = request, res = response) => {
-    const { _id } = req.params;
-    try {
-        const user = await User.findById(_id);
-        if (!user) {
-            return res.status(404).json({
-                message: "Usuario no encontrado"
-            });
-        }
+const updateUserProfilePicture = async (req, res) => {
+  const { _id } = req.params;
 
-        if (!req.file) {
-            return res.status(404).json({
-                message: "No se ha enviado una imagen"
-            });
-        }
-
-        // Construir la URL completa
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
-        const imageUrl = `${baseUrl}/${req.file.path.replace(/\\/g, '/')}`;
-
-        user.profilePicture = imageUrl;
-        await user.save();
-
-        res.json({
-            message: 'Foto de perfil actualizada',
-            profilePicture: user.profilePicture
-        });
-    } catch (error) {
-        console.log(error.message, error);
-        res.status(500).json({
-            message: 'Error al actualizar la foto de perfil',
-            error
-        });
+  try {
+    const user = await User.findById(_id);
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
     }
-}
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No se ha enviado una imagen" });
+    }
+
+    const relativePath = path.relative('C:/questhub-uploads', req.file.path).replace(/\\/g, '/');
+    user.profilePicture = relativePath;
+
+    await user.save();
+
+    res.json({
+      message: "Foto de perfil actualizada",
+      profilePicture: user.profilePicture
+    });
+
+  } catch (error) {
+    console.error("Error al actualizar la foto de perfil:", error);
+    res.status(500).json({
+      message: "Error al actualizar la foto de perfil",
+      error: error.message
+    });
+  }
+};
 
 const updateUserPassword = async (req = request, res = response) => {
     const { _id } = req.params;
@@ -272,35 +268,38 @@ const getFollowersByUserId = async (req, res) => {
 };
 
 const getProfilePicture = async (req, res) => {
-    const { _id } = req.params;
+  const { _id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(_id)) {
-        return res.status(400).json({ message: "ID no válido" });
+  if (!mongoose.Types.ObjectId.isValid(_id)) {
+    return res.status(400).json({ message: "ID no válido" });
+  }
+
+  try {
+    const user = await User.findById(_id);
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    try {
-        const user = await User.findById(_id);
-
-        if (!user) {
-            return res.status(404).json({ message: "Usuario no encontrado" });
-        }
-
-        if (!user.profilePicture) {
-            return res.status(404).json({ message: "Usuario no tiene foto de perfil" });
-        }
-
-        const imagePath = path.resolve(__dirname, '../../', user.profilePicture.replace(/\\/g, '/'));
-
-        if (!fs.existsSync(imagePath)) {
-            return res.status(404).json({ message: "Archivo de imagen no encontrado en el servidor" });
-        }
-
-        return res.sendFile(imagePath);
-
-    } catch (error) {
-        return res.status(500).json({ message: "Error interno al obtener imagen", error: error.message });
+    if (!user.profilePicture) {
+      return res.status(404).json({ message: "El usuario no tiene foto de perfil" });
     }
+
+    const imagePath = path.join('C:/questhub-uploads', user.profilePicture);
+    // console.log("Ruta de la imagen:", imagePath);
+
+    if (!fs.existsSync(imagePath)) {
+      return res.status(404).json({ message: "Imagen no encontrada en el servidor" });
+    }
+
+    res.sendFile(imagePath);
+    
+  } catch (error) {
+    console.error("Error al obtener la foto de perfil:", error);
+    res.status(500).json({ message: "Error interno al obtener la imagen", error: error.message });
+  }
 };
+
 
 const register = async (req = request, res = response) => {
     const { name, email, password, role } = req.body;
