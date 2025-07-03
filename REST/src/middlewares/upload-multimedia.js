@@ -3,8 +3,9 @@ const path = require('path');
 const fs = require('fs');
 
 function createUploadMiddleware(folderName = 'posts-multimedia') {
-  const destination = `uploads/${folderName}`;
-  
+  const baseUploadDir = 'C:/questhub-uploads';
+  const destination = path.join(baseUploadDir, folderName);
+
   // Asegurarse de que el directorio exista
   if (!fs.existsSync(destination)) {
     fs.mkdirSync(destination, { recursive: true });
@@ -15,17 +16,19 @@ function createUploadMiddleware(folderName = 'posts-multimedia') {
       cb(null, destination);
     },
     filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+      const timestamp = Date.now();
+      const ext = path.extname(file.originalname);
+      const baseName = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9_\-]/g, '_');
+      cb(null, `${baseName}_${timestamp}${ext}`);
     }
   });
 
   const fileFilter = (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'video/mp4'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Formato no permitido. Solo imágenes o videos.'), false);
+      cb(new Error('Formato no permitido. Solo imágenes .jpg, .jpeg, .png.'), false);
     }
   };
 
@@ -33,8 +36,7 @@ function createUploadMiddleware(folderName = 'posts-multimedia') {
     storage,
     fileFilter,
     limits: {
-      files: 5,
-      fileSize: 20 * 1024 * 1024
+      fileSize: 5 * 1024 * 1024 // 5 MB
     }
   });
 }

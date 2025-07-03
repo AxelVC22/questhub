@@ -454,7 +454,7 @@ router.get('/:_id/followers', getFollowersByUserId)
  *       500:
  *         description: Error interno
  */
-router.get('/:_id/profile-picture', verifyToken, getProfilePicture);
+router.get('/:_id/profile-picture', getProfilePicture);
 
 /**
  * @swagger
