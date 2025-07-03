@@ -3,6 +3,9 @@ const mongoose = require('mongoose');
 const User = require('../models/user');
 const bcrypt = require("bcryptjs");
 const UserFollower = require('../models/userFollower');
+const Answer = require('../models/answer');
+const Post = require('../models/post');
+const Rating = require('../models/rating');
 const path = require('path');
 const fs = require('fs');
 
@@ -236,8 +239,8 @@ const unfollowUser = async (req, res) => {
         }
 
         await UserFollower.findOneAndDelete({
-            user: _id,       
-            follower: userId  
+            user: _id,
+            follower: userId
         });
 
         await User.updateOne({ _id }, { $inc: { followers: -1 } });
@@ -337,6 +340,46 @@ const register = async (req = request, res = response) => {
 };
 
 
+const getUserStatistics = async (req, res) => {
+    const { _id } = req.params;
+
+    try {
+        // Total de posts del usuario
+        const totalPosts = await Post.countDocuments({ author: _id, status:'Active' });
+
+        // Total de respuestas activas del usuario
+        const answers = await Answer.find({ author: _id, status: 'Active' }).select('_id');
+
+        const answerIds = answers.map(ans => ans._id);
+        const totalAnswers = answers.length;
+
+        // Calificaciones recibidas por respuestas del usuario
+        const ratings = await Rating.find({ answer: { $in: answerIds } });
+
+        const ratingDistribution = {
+            1: 0, 2: 0, 3: 0, 4: 0, 5: 0
+        };
+
+        for (const rating of ratings) {
+            const value = Math.round(rating.qualification); // asegúrate que sea 1-5
+            if (ratingDistribution.hasOwnProperty(value)) {
+                ratingDistribution[value]++;
+            }
+        }
+
+        return res.status(200).json({
+            totalPosts,
+            totalAnswers,
+            ratingDistribution
+        });
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Error al obtener estadísticas', error: err.message });
+    }
+};
+
+
 module.exports = {
     getUserById,
     getUsers,
@@ -348,5 +391,6 @@ module.exports = {
     unfollowUser,
     getFollowersByUserId,
     getProfilePicture,
-    register
+    register,
+    getUserStatistics
 }

@@ -15,7 +15,8 @@ const {
     unfollowUser,
     getFollowersByUserId,
     getProfilePicture,
-    register
+    register,
+    getUserStatistics
  } = require('../controllers/users');
 
 /**
@@ -501,6 +502,9 @@ router.get('/:_id/profile-picture', verifyToken, getProfilePicture);
  *         description: Error al crear el usuario
  */
 router.post('/', verifyToken, register);
+
+
+router.get('/statistics/:_id', getUserStatistics);
 
 
 module.exports = router;
