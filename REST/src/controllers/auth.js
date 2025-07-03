@@ -53,17 +53,37 @@ const login = async (req = request, res = response) => {
         }
 
         const validPassword = await bcrypt.compare(password, user.password);
-        
+
         if (!validPassword) {
             return res.status(400).json({
                 message: "La contraseña no es correcta"
             });
         }
 
+        if (user.status === "Inactive") {
+            if (user.banEndDate) {
+                const now = new Date();
+                if (now >= user.banEndDate) {
+                    user.status = "Active";
+                    user.banEndDate = null;
+                    await user.save();
+                } else {
+                    return res.status(403).json({
+                        message: `Tu cuenta está suspendida hasta el ${user.banEndDate.toLocaleDateString()}`
+                    });
+                }
+            } else {
+                return res.status(403).json({
+                    message: "Tu cuenta ha sido suspendida permanentemente"
+                });
+            }
+        }
+
         const payload = {
             id: user._id,
             name: user.name,
         };
+
 
         const token = await generateToken(payload);
         res.header("x-token", token);

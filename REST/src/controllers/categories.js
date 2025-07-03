@@ -25,7 +25,15 @@ const getCategoryById = async (req = request, res = response) => {
 
 const getCategories = async (req = request, res = response) => {
   try {
-    const categories = await Category.find();
+    let { status } = req.query;
+
+    const filter = {};
+
+    if (status) {
+      filter.status = status;
+    }
+
+    const categories = await Category.find(filter);
     return res.status(200).json(categories);
   } catch (error) {
     console.log(error.message);

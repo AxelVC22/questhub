@@ -1,5 +1,6 @@
 const { request, response } = require('express');
 const Report = require('../models/report');
+const User = require('../models/user');
 
 const getReportById = async (req = request, res = response) => {
     try {
@@ -39,14 +40,14 @@ const getReportById = async (req = request, res = response) => {
 
 const getReports = async (req = request, res = response) => {
     try {
-        let { page = 1, limit = 10 } = req.query;
+        let { page = 1, limit = 10, status } = req.query;
 
         page = Math.max(Number(page), 1);
         limit = Math.max(Number(limit), 1);
         const totalReports = await Report.countDocuments();
         const totalPages = Math.ceil(totalReports / limit);
 
-        const reports = await Report.find()
+        const reports = await Report.find({ status: status })
             .skip((page - 1) * limit)
             .limit(limit)
             .sort({ createdAt: -1 })
@@ -54,10 +55,16 @@ const getReports = async (req = request, res = response) => {
             .populate('reporter', 'name')
             .populate({
                 path: 'post',
-                populate: {
-                    path: 'author',
-                    select: 'name'
-                }
+                populate: [
+                    {
+                        path: 'author',
+                        select: 'name'
+                    },
+                    {
+                        path: 'categories',
+                        select: 'name'
+                    }
+                ]
             })
             .populate({
                 path: 'answer',
@@ -124,19 +131,42 @@ const createReport = async (req = request, res = response) => {
 const updateReport = async (req = request, res = response) => {
     try {
         const { report_id } = req.params;
-        const { status } = req.body;
+        const { status, user, endBanDate } = req.body;
+
         if (!status) {
             return res.status(400).json({
                 message: 'El estado es obligatorio'
             });
         }
-        const updatedReport = await Report.findByIdAndUpdate
-            (report_id, { status }, { new: true });
+
+        const updatedReport = await Report.findByIdAndUpdate(
+            report_id,
+            { status },
+            { new: true }
+        );
+
         if (!updatedReport) {
             return res.status(404).json({
                 message: "Reporte no encontrado"
             });
         }
+
+        if (status === 'Sanctioned') {
+            if (!user) {
+                return res.status(400).json({
+                    message: 'El usuario a sancionar es obligatorio'
+                });
+            }
+
+            await User.findByIdAndUpdate(
+                user,
+                {
+                    status: 'Inactive',
+                    banEndDate: endBanDate || null
+                }
+            );
+        }
+
         return res.status(200).json(updatedReport);
     } catch (error) {
         console.error(error.message);
@@ -145,6 +175,7 @@ const updateReport = async (req = request, res = response) => {
             error: error.message
         });
     }
-}
+};
+
 
 module.exports = { getReportById, getReports, createReport, updateReport };
