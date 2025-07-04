@@ -27,7 +27,7 @@ const getPostById = async (req = request, res = response) => {
 const createPost = async (req = request, res = response) => {
     try {
         const { title, content, author, category } = req.body;
-        
+
         if (!title) {
             return res.status(400).json({ message: 'El título de la publicación es obligatorio' });
         }
@@ -128,15 +128,51 @@ const deletePost = async (req = request, res = response) => {
 
 const getPosts = async (req = request, res = response) => {
     try {
-        let { page = 1, limit = 10, user } = req.query;
+        let { page = 1, limit = 10, user, category, following, content } = req.query;
 
         page = Math.max(Number(page), 1);
         limit = Math.max(Number(limit), 1);
 
-        const totalPosts = await Post.countDocuments();
+        // Filtro base
+        const query = { status: 'Active' };
+
+        // Filtro por texto en título o contenido
+        if (content) {
+            const regex = new RegExp(content, 'i'); // 'i' para case-insensitive
+            query.$or = [
+                { title: { $regex: regex } },
+                { content: { $regex: regex } }
+            ];
+        }
+
+        // Filtro por categoría
+        if (category) {
+            query.category = category;
+        }
+
+        // Si se solicita filtrar por los usuarios que sigue
+        let followedIds = new Set();
+
+        if (user && following === 'true') {
+            const follows = await UserFollower.find({ follower: user }).select('user');
+            followedIds = new Set(follows.map(f => f.user.toString()));
+
+            if (followedIds.size === 0) {
+                return res.status(200).json({
+                    currentPage: page,
+                    totalPages: 0,
+                    totalPosts: 0,
+                    posts: []
+                });
+            }
+
+            query.author = { $in: Array.from(followedIds) };
+        }
+
+        const totalPosts = await Post.countDocuments(query);
         const totalPages = Math.ceil(totalPosts / limit);
 
-        const posts = await Post.find({status:'Active'})
+        const posts = await Post.find(query)
             .skip((page - 1) * limit)
             .limit(limit)
             .sort({ createdAt: -1 })
@@ -152,15 +188,14 @@ const getPosts = async (req = request, res = response) => {
             });
         }
 
-        const authorIds = posts
-            .filter(post => post.author)
-            .map(post => post.author._id.toString());
+        // Si no se solicitó filtro `following`, igual marcamos cuáles sí sigue
+        if (user && following !== 'true') {
+            const authorIds = posts
+                .filter(post => post.author)
+                .map(post => post.author._id.toString());
 
-        const uniqueAuthorIds = [...new Set(authorIds)];
+            const uniqueAuthorIds = [...new Set(authorIds)];
 
-        let followedIds = new Set();
-
-        if (user && uniqueAuthorIds.length > 0) {
             const follows = await UserFollower.find({
                 follower: user,
                 user: { $in: uniqueAuthorIds }
@@ -171,13 +206,11 @@ const getPosts = async (req = request, res = response) => {
 
         const postsWithFollowInfo = posts.map(post => {
             const p = post.toObject();
-
             if (p.author) {
                 p.author.isFollowed = user
                     ? followedIds.has(post.author._id.toString())
                     : false;
             }
-
             return p;
         });
 
@@ -196,6 +229,7 @@ const getPosts = async (req = request, res = response) => {
         });
     }
 };
+
 
 module.exports = {
     getPostById,
