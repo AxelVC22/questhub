@@ -87,6 +87,7 @@ const deleteAnswer = async (req = request, res = response) => {
     try {
         const { answer_id } = req.params;
 
+
         const deletedAnswer = await Answer.findByIdAndUpdate(answer_id, { status: 'Inactive' }, { new: true });
 
         if (!deletedAnswer) {
@@ -95,7 +96,7 @@ const deleteAnswer = async (req = request, res = response) => {
 
         return res.status(200).json({ message: 'Respuesta eliminada correctamente' });
     } catch (error) {
-        console.log(error.message);
+        console.log("error aqui: " + error.message);
         res.status(500).json({
             message: 'Error al eliminar la respuesta',
             error: error.message,
