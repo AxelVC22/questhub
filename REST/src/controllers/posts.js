@@ -136,7 +136,7 @@ const getPosts = async (req = request, res = response) => {
         // Filtro base
         const query = { status: 'Active' };
 
-        // Filtro por texto en título o contenido
+        // Filtro por texto en título o contenid
         if (content) {
             const regex = new RegExp(content, 'i'); // 'i' para case-insensitive
             query.$or = [
