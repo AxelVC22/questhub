@@ -344,7 +344,7 @@ const getUserStatistics = async (req, res) => {
     const { _id } = req.params;
 
     try {
-        const totalPosts = await Post.countDocuments({ author: _id, status:'Active' });
+        const totalPosts = await Post.countDocuments({ author: _id, status: 'Active' });
 
         const answers = await Answer.find({ author: _id, status: 'Active' }).select('_id');
 
@@ -358,7 +358,7 @@ const getUserStatistics = async (req, res) => {
         };
 
         for (const rating of ratings) {
-            const value = Math.round(rating.qualification); 
+            const value = Math.round(rating.qualification);
             if (ratingDistribution.hasOwnProperty(value)) {
                 ratingDistribution[value]++;
             }

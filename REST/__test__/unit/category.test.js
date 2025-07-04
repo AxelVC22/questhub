@@ -185,12 +185,28 @@ describe('PUT /api/categories/:category_id', () => {
     expect(res.body.name).toBe('Tecnología actualizada');
   });
 
+  it('debe retornar 400 si ya existe otra categoría con ese nombre', async () => {
+    const categoryId = 'abc123';
+    const updates = { name: 'Tecnología' };
 
+    Category.findOne.mockResolvedValue({ _id: 'otroId', name: 'Tecnología' });
+    Category.findByIdAndUpdate.mockResolvedValue(null);
+
+    const res = await request(app)
+      .put(`/api/categories/${categoryId}`)
+      .send(updates);
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ message: 'Ya existe una categoría con ese nombre' });
+
+    expect(Category.findByIdAndUpdate).not.toHaveBeenCalled();
+  });
 
 
 
   it('debe retornar 404 si no existe categoría para actualizar', async () => {
-    Category.findByIdAndUpdate.mockResolvedValue(null);
+    Category.findOne = jest.fn().mockResolvedValue(null);
+    Category.findByIdAndUpdate = jest.fn().mockResolvedValue(null); // no se encuentra la categoría
 
     const res = await request(app)
       .put('/api/categories/abc123')
@@ -200,8 +216,10 @@ describe('PUT /api/categories/:category_id', () => {
     expect(res.body.message).toBe('Categoría no encontrada');
   });
 
+
   it('debe retornar 500 en caso de error interno', async () => {
-    Category.findByIdAndUpdate.mockRejectedValue(new Error('Error DB'));
+    Category.findOne = jest.fn().mockResolvedValue(null); 
+    Category.findByIdAndUpdate = jest.fn().mockRejectedValue(new Error('Error DB'));
 
     const res = await request(app)
       .put('/api/categories/abc123')
@@ -211,6 +229,7 @@ describe('PUT /api/categories/:category_id', () => {
     expect(res.body.message).toBe('Error al actualizar la categoría');
     expect(res.body.error).toBe('Error DB');
   });
+
 });
 
 describe('DELETE /api/categories/:category_id/delete', () => {
