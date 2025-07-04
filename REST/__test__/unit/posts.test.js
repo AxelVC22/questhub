@@ -25,6 +25,15 @@ app.delete('/api/posts/:post_id', deletePost);
 app.get('/api/posts', getPosts);
 
 describe('GET /api/post/:id', () => {
+
+  beforeEach(() => {
+    // Limpiar todos los mocks antes de cada prueba
+    jest.clearAllMocks();
+
+    // Mock por defecto para UserFollower.find
+    UserFollower.find = jest.fn();
+  });
+
   it('debe retornar el post con author poblado', async () => {
     const fakePost = {
       _id: '1234567890abcdef12345678',
@@ -51,7 +60,96 @@ describe('GET /api/post/:id', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual(fakePost);
   });
+  it('debe retornar array vacío cuando no hay posts', async () => {
+    Post.countDocuments = jest.fn().mockResolvedValue(0);
 
+    Post.find = jest.fn().mockReturnValue({
+      skip: jest.fn().mockReturnValue({
+        limit: jest.fn().mockReturnValue({
+          sort: jest.fn().mockReturnValue({
+            populate: jest.fn().mockReturnValue({
+              populate: jest.fn().mockResolvedValue([]) 
+            })
+          })
+        })
+      })
+    });
+
+    const res = await request(app).get('/api/posts');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      currentPage: 1,
+      totalPages: 0,
+      totalPosts: 0,
+      posts: []
+    });
+  });
+
+  it('debe ejecutar lógica de seguimiento cuando hay user y posts con autores', async () => {
+    const userId = '123456789012345678901234';
+    const author1Id = '123456789012345678901235';
+    const author2Id = '123456789012345678901236';
+
+    const mockPosts = [
+      {
+        _id: '1234567890abcdef12345678',
+        title: 'Post 1',
+        author: { _id: author1Id, name: 'Autor 1' },
+        category: { _id: '123456789012345678901237', name: 'Categoria 1' },
+        toObject: jest.fn().mockReturnValue({
+          _id: '1234567890abcdef12345678',
+          title: 'Post 1',
+          author: { _id: author1Id, name: 'Autor 1' },
+          category: { _id: '123456789012345678901237', name: 'Categoria 1' }
+        })
+      },
+      {
+        _id: '1234567890abcdef12345679',
+        title: 'Post 2',
+        author: { _id: author2Id, name: 'Autor 2' },
+        category: { _id: '123456789012345678901238', name: 'Categoria 2' },
+        toObject: jest.fn().mockReturnValue({
+          _id: '1234567890abcdef12345679',
+          title: 'Post 2',
+          author: { _id: author2Id, name: 'Autor 2' },
+          category: { _id: '123456789012345678901238', name: 'Categoria 2' }
+        })
+      }
+    ];
+
+    const mockFollows = [
+      { follower: userId, user: author1Id } 
+    ];
+
+    Post.countDocuments = jest.fn().mockResolvedValue(2);
+
+    Post.find = jest.fn().mockReturnValue({
+      skip: jest.fn().mockReturnValue({
+        limit: jest.fn().mockReturnValue({
+          sort: jest.fn().mockReturnValue({
+            populate: jest.fn().mockReturnValue({
+              populate: jest.fn().mockResolvedValue(mockPosts)
+            })
+          })
+        })
+      })
+    });
+
+    UserFollower.find = jest.fn().mockResolvedValue(mockFollows);
+
+    const res = await request(app).get(`/api/posts?user=${userId}`);
+
+    expect(res.status).toBe(200);
+
+    expect(UserFollower.find).toHaveBeenCalledWith({
+      follower: userId,
+      user: { $in: [author1Id, author2Id] }
+    });
+
+    expect(res.body.posts[0].author.isFollowed).toBe(true);  
+    expect(res.body.posts[1].author.isFollowed).toBe(false); 
+  });
   it('debe retornar 404 si el post no existe', async () => {
 
     Post.findById = jest.fn().mockReturnValue({
@@ -406,7 +504,6 @@ describe('GET /api/posts', () => {
       }
     ];
 
-    // Mocks en cadena (Post.find().skip().limit().sort().populate().populate())
     Post.find = jest.fn(() => ({
       skip: jest.fn(() => ({
         limit: jest.fn(() => ({
@@ -419,25 +516,21 @@ describe('GET /api/posts', () => {
       }))
     }));
 
-    // Mock de total de posts
     Post.countDocuments = jest.fn().mockResolvedValue(20);
 
-    // Mock de UserFollower (sin autores seguidos)
     UserFollower.find = jest.fn().mockResolvedValue([]);
 
-    // Llamada real
     const res = await request(app).get('/api/posts?page=1&limit=10');
 
-    // Expectativas
     expect(res.status).toBe(200);
-   
+
   });
 
 
   it('debe retornar 500 si hay un error interno', async () => {
 
 
-     Post.find = jest.fn(() => ({
+    Post.find = jest.fn(() => ({
       skip: jest.fn(() => ({
         limit: jest.fn(() => ({
           sort: jest.fn(() => ({
@@ -449,16 +542,12 @@ describe('GET /api/posts', () => {
       }))
     }));
 
-    // Mock de total de posts
     Post.countDocuments = jest.fn().mockResolvedValue(20);
 
-    // Mock de UserFollower (sin autores seguidos)
     UserFollower.find = jest.fn().mockResolvedValue([]);
 
-    // Llamada real
     const res = await request(app).get('/api/posts?page=1&limit=10');
 
-    // Expectativas
     expect(res.status).toBe(500);
 
   });

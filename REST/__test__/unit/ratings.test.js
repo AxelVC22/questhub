@@ -78,15 +78,12 @@ describe('POST /api/ratings', () => {
             totalRatings: 3
         };
 
-        // Mocks necesarios
-        Rating.findOneAndUpdate = jest.fn().mockResolvedValue(newRating); // simula la calificación creada/actualizada
-        Rating.find = jest.fn().mockResolvedValue(ratings); // todas las calificaciones de esa respuesta
-        Answer.findByIdAndUpdate = jest.fn().mockResolvedValue(updatedAnswer); // resultado esperado
+        Rating.findOneAndUpdate = jest.fn().mockResolvedValue(newRating); 
+        Rating.find = jest.fn().mockResolvedValue(ratings); 
+        Answer.findByIdAndUpdate = jest.fn().mockResolvedValue(updatedAnswer); 
 
-        // Llamada real
         const response = await request(app).post('/api/ratings').send(newRating);
 
-        // Validaciones
         expect(Rating.findOneAndUpdate).toHaveBeenCalledWith(
             { author: newRating.author, answer: newRating.answer },
             { qualification: newRating.qualification },
@@ -98,7 +95,7 @@ describe('POST /api/ratings', () => {
         expect(Answer.findByIdAndUpdate).toHaveBeenCalledWith(
             newRating.answer,
             {
-                qualification: 4, // promedio de [5,3,4]
+                qualification: 4, 
                 totalRatings: 3
             }
         );
@@ -145,7 +142,6 @@ describe('POST /api/ratings', () => {
             answer: '1234567890abcdef12345678'
         };
 
-        // Mockeamos el método correcto con error
         Rating.findOneAndUpdate = jest.fn().mockRejectedValue(new Error('Error al crear la calificación'));
 
         const response = await request(app)
@@ -229,6 +225,17 @@ describe('PUT /api/ratings/:id', () => {
         const response = await request(app).put('/api/ratings/1234567890abcdef12345678').send(updatedRating);
         expect(response.status).toBe(404);
         expect(response.body).toEqual({ message: 'Calificación no encontrada' });
+    });
+
+      it('Debe retornar un error 500 por error interno', async () => {
+        const updatedRating = {
+            qualification: 4,
+            author: '1234567890abcdef12345678',
+            answer: '1234567890abcdef12345678',
+        };
+        Rating.findByIdAndUpdate = jest.fn().mockRejectedValue(new Error('Error interno'));
+        const response = await request(app).put('/api/ratings/1234567890abcdef12345678').send(updatedRating);
+        expect(response.status).toBe(500);
     });
 
 });
